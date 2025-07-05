@@ -1,0 +1,11 @@
+{
+  "uuid": "smart-battery-alert@komesh.dev",
+  "name": "Smart Battery Alert",
+  "description": "Smart battery notifications, charge prediction, and level-cap reminders.",
+  "shell-version": ["43", "44", "45", "46", "47", "48"],
+  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.smart-battery-alert",
+  "url": "https://github.com/KomeshBathula/smart-battery-alert",
+  "gettext-domain": "smart-battery-alert"
+}
+

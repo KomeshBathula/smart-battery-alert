@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.smart-battery-alert" path="/org/gnome/shell/extensions/smart-battery-alert/">
+    <key name="update-time" type="i">
+      <default>5</default>
+      <summary>Seconds between updates</summary>
+      <description>Delay between sensor polling</description>
+    </key>
+    <key name="charge-limit" type="i">
+      <default>80</default>
+      <summary>Battery Cap Level</summary>
+      <description>Battery charge level at which to alert the user.</description>
+    </key>
+  </schema>
+</schemalist>
+

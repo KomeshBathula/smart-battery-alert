@@ -1,0 +1,33 @@
+'use strict';
+
+import Gtk from 'gi://Gtk';
+import Gio from 'gi://Gio';
+import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+
+export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
+    fillPreferencesWindow(window) {
+        log(`[smart-battery-alert@komesh.dev] fillPreferencesWindow() called`);
+
+        const settings = new Gio.Settings({
+            schema_id: 'org.gnome.shell.extensions.smart-battery-alert'
+        });
+
+        const vbox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            spacing: 12,
+            margin_top: 12,
+            margin_bottom: 12,
+            margin_start: 12,
+            margin_end: 12,
+        });
+
+        const label = new Gtk.Label({
+            label: 'Smart Battery Alert Preferences loaded successfully!',
+            halign: Gtk.Align.START,
+        });
+
+        vbox.append(label);
+        window.set_child(vbox);
+    }
+}
+
