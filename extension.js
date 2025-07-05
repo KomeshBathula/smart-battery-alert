@@ -7,6 +7,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 let batteryWatcher = null;
 
@@ -33,9 +34,12 @@ class BatteryMenuButton extends PanelMenu.Button {
     }
 
     _initializeMenu() {
-        // Add menu items here
-        this.menu.addMenuItem(new PopupMenu.PopupMenuItem('Battery Level: --%'));
-        this.menu.addMenuItem(new PopupMenu.PopupMenuItem('Charging Time: --'));
+        this._batteryLevelItem = new PopupMenu.PopupMenuItem('Battery Level: --%');
+        this.menu.addMenuItem(this._batteryLevelItem);
+
+        this._chargingTimeItem = new PopupMenu.PopupMenuItem('Charging Time: --');
+        this.menu.addMenuItem(this._chargingTimeItem);
+
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         let chargeLimitItem = new PopupMenu.PopupMenuItem('Set Charge Limit: 80%');
@@ -46,7 +50,10 @@ class BatteryMenuButton extends PanelMenu.Button {
             child: new St.Icon({ icon_name: 'view-refresh-symbolic' })
         });
         refreshButton.connect('clicked', () => this._queryBattery());
-        this.menu.addMenuItem(new PopupMenu.PopupBaseMenuItem({ actor: refreshButton }));
+
+        let refreshMenuItem = new PopupMenu.PopupBaseMenuItem();
+        refreshMenuItem.actor.add_child(refreshButton);
+        this.menu.addMenuItem(refreshMenuItem);
     }
 
     _initializeTimer() {
@@ -76,41 +83,43 @@ class BatteryMenuButton extends PanelMenu.Button {
 
             this._updateBatteryLevel(percent);
             this._updateChargingTime(percent, state);
+            this._updateBatteryIconVisibility(state);
         } catch (e) {
             logError(e, 'Battery check failed');
         }
     }
 
     _updateBatteryLevel(percent) {
-        let batteryLevelItem = this.menu._getMenuItems()[0];
-        batteryLevelItem.label.text = `Battery Level: ${percent}%`;
+        this._batteryLevelItem.label.text = `Battery Level: ${percent}%`;
 
         if (percent <= 30) {
             Main.notify('Battery Alert', `Battery is at ${percent}%. Connect your charger.`);
         }
         if (percent === 20) {
             let notification = new MessageTray.Notification('Critical Battery Alert', 'Battery at 20%! Plug in now.');
-            notification.setTransient(false); // Make it persistent
+            notification.setTransient(false);
             Main.messageTray.add(notification);
         }
     }
 
     _updateChargingTime(percent, state) {
-        let chargingTimeItem = this.menu._getMenuItems()[1];
         if (state === 'charging') {
             let estimatedTime = this._estimateChargingTime(percent);
-            chargingTimeItem.label.text = `Charging Time: ${estimatedTime}`;
+            this._chargingTimeItem.label.text = `Charging Time: ${estimatedTime}`;
             this._chargingTimeLabel.text = estimatedTime;
         } else {
-            chargingTimeItem.label.text = 'Charging Time: --';
+            this._chargingTimeItem.label.text = 'Charging Time: --';
             this._chargingTimeLabel.text = '';
         }
     }
 
+    _updateBatteryIconVisibility(state) {
+        this._indicator.visible = state === 'charging';
+    }
+
     _estimateChargingTime(percent) {
-        // Placeholder for charging time estimation logic
         let currentTime = new Date();
-        let estimatedCompletionTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000); // Example: 2 hours from now
+        let estimatedCompletionTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000);
         return estimatedCompletionTime.toLocaleTimeString();
     }
 
