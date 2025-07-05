@@ -22,6 +22,12 @@ class BatteryMenuButton extends PanelMenu.Button {
         });
         this.add_child(this._indicator);
 
+        this._chargingTimeLabel = new St.Label({
+            text: '',
+            style_class: 'charging-time-label'
+        });
+        this.add_child(this._chargingTimeLabel);
+
         this._initializeMenu();
         this._initializeTimer();
     }
@@ -83,24 +89,29 @@ class BatteryMenuButton extends PanelMenu.Button {
             Main.notify('Battery Alert', `Battery is at ${percent}%. Connect your charger.`);
         }
         if (percent === 20) {
-            Main.notify('Critical Battery Alert', 'Battery at 20%! Plug in now.');
+            let notification = new MessageTray.Notification('Critical Battery Alert', 'Battery at 20%! Plug in now.');
+            notification.setTransient(false); // Make it persistent
+            Main.messageTray.add(notification);
         }
     }
 
     _updateChargingTime(percent, state) {
         let chargingTimeItem = this.menu._getMenuItems()[1];
         if (state === 'charging') {
-            // Estimate charging time logic here
             let estimatedTime = this._estimateChargingTime(percent);
             chargingTimeItem.label.text = `Charging Time: ${estimatedTime}`;
+            this._chargingTimeLabel.text = estimatedTime;
         } else {
             chargingTimeItem.label.text = 'Charging Time: --';
+            this._chargingTimeLabel.text = '';
         }
     }
 
     _estimateChargingTime(percent) {
         // Placeholder for charging time estimation logic
-        return '2 hours';
+        let currentTime = new Date();
+        let estimatedCompletionTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000); // Example: 2 hours from now
+        return estimatedCompletionTime.toLocaleTimeString();
     }
 
     destroy() {
@@ -125,4 +136,3 @@ export default class SmartBatteryAlertExtension extends Extension {
         }
     }
 }
-

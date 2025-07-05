@@ -10,7 +10,7 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
 
         const page = new Adw.PreferencesPage();
         const group = new Adw.PreferencesGroup();
-
+        //Update Time Row 
         const updateTimeRow = new Adw.SpinRow({
             title: 'Update Time',
             subtitle: 'Seconds between updates',
@@ -29,7 +29,7 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
             adjustment: new Gtk.Adjustment({
                 lower: 70,
                 upper: 100,
-                step_increment: 10,
+                step_increment: 1,
             }),
         });
         settings.bind('charge-limit', chargeLimitRow, 'value', Gio.SettingsBindFlags.DEFAULT);
