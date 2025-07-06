@@ -23,40 +23,48 @@ class BatteryMenuButton extends PanelMenu.Button {
         });
         this.add_child(this._indicator);
 
-        this._chargingTimeLabel = new St.Label({
-            text: '',
-            style_class: 'charging-time-label'
+        this._batteryLevelLabel = new St.Label({
+            text: 'Battery Level: --%',
+            style_class: 'battery-level-label'
         });
-        this.add_child(this._chargingTimeLabel);
+        this.add_child(this._batteryLevelLabel);
+
+        this._chargeLimitLabel = new St.Label({
+            text: '',
+            style_class: 'charge-limit-label'
+        });
+        this.add_child(this._chargeLimitLabel);
 
         this._initializeMenu();
-        this._initializeTimer();
+        this.initializeTimer();
     }
 
     _initializeMenu() {
         this._batteryLevelItem = new PopupMenu.PopupMenuItem('Battery Level: --%');
         this.menu.addMenuItem(this._batteryLevelItem);
 
-        this._chargingTimeItem = new PopupMenu.PopupMenuItem('Charging Time: --');
-        this.menu.addMenuItem(this._chargingTimeItem);
+        this._chargeLimitItem = new PopupMenu.PopupMenuItem(`Charge Limit: ${this._settings.get_int('charge-limit')}%`);
+        this.menu.addMenuItem(this._chargeLimitItem);
+
+        this._chargeCompleteByItem = new PopupMenu.PopupMenuItem('Charge Complete By: --');
+        this.menu.addMenuItem(this._chargeCompleteByItem);
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-        let chargeLimitItem = new PopupMenu.PopupMenuItem('Set Charge Limit: 80%');
-        this.menu.addMenuItem(chargeLimitItem);
 
         let refreshButton = new St.Button({
             style_class: 'message-list-clear-button button vitals-button-action',
             child: new St.Icon({ icon_name: 'view-refresh-symbolic' })
         });
-        refreshButton.connect('clicked', () => this._queryBattery());
+        refreshButton.connect('clicked', () => {
+            this._queryBattery();
+        });
 
         let refreshMenuItem = new PopupMenu.PopupBaseMenuItem();
         refreshMenuItem.actor.add_child(refreshButton);
         this.menu.addMenuItem(refreshMenuItem);
     }
 
-    _initializeTimer() {
+    initializeTimer() {
         this._refreshTimeoutId = GLib.timeout_add_seconds(
             GLib.PRIORITY_DEFAULT,
             this._settings.get_int('update-time'),
@@ -69,20 +77,40 @@ class BatteryMenuButton extends PanelMenu.Button {
 
     _queryBattery() {
         try {
-            let [ok, out] = GLib.spawn_command_line_sync("upower -i $(upower -e | grep BAT)");
-            if (!ok) throw new Error('Failed to get battery info');
-
+            let [ok, deviceListRaw] = GLib.spawn_command_line_sync("upower -e");
+            if (!ok) {
+                logError(new Error("Failed to list battery devices"));
+                return;
+            }
+            let deviceList = new TextDecoder().decode(deviceListRaw).split("\n");
+            let batteryDevice = deviceList.find(device => device.includes("BAT"));
+            if (!batteryDevice) {
+                logError(new Error("Battery device not found"));
+                return;
+            }
+            let [ok2, out] = GLib.spawn_command_line_sync(`upower -i ${batteryDevice}`);
+            if (!ok2) {
+                logError(new Error("Failed to get battery info"));
+                return;
+            }
             let info = new TextDecoder().decode(out);
-            let percentageMatch = info.match(/percentage:\s+(\d+)%/);
-            let stateMatch = info.match(/state:\s+(\w+)/);
+            let percentageMatch = info.match(/percentage:\s+(\d+)%/i);
+            let stateMatch = info.match(/state:\s+(\w+)/i);
+            let energyRateMatch = info.match(/energy-rate:\s+([\d.]+) W/i);
+            let chargeLimit = this._settings.get_int('charge-limit');
 
-            if (!percentageMatch || !stateMatch) return;
+            if (!percentageMatch || !stateMatch || !energyRateMatch) {
+                log('Battery info incomplete');
+                return;
+            }
 
             let percent = parseInt(percentageMatch[1]);
             let state = stateMatch[1];
+            let energyRate = parseFloat(energyRateMatch[1]);
 
             this._updateBatteryLevel(percent);
-            this._updateChargingTime(percent, state);
+            this._updateChargeLimit(chargeLimit);
+            this._updateChargeCompleteBy(percent, state, energyRate, chargeLimit);
             this._updateBatteryIconVisibility(state);
         } catch (e) {
             logError(e, 'Battery check failed');
@@ -91,25 +119,32 @@ class BatteryMenuButton extends PanelMenu.Button {
 
     _updateBatteryLevel(percent) {
         this._batteryLevelItem.label.text = `Battery Level: ${percent}%`;
+        this._batteryLevelLabel.text = `Battery Level: ${percent}%`;
 
         if (percent <= 30) {
             Main.notify('Battery Alert', `Battery is at ${percent}%. Connect your charger.`);
         }
         if (percent === 20) {
-            let notification = new MessageTray.Notification('Critical Battery Alert', 'Battery at 20%! Plug in now.');
+            const source = new MessageTray.Source('Battery Alert', 'battery-caution-symbolic');
+            Main.messageTray.add(source);
+            let notification = new MessageTray.Notification(source, 'Critical Battery Alert', 'Battery at 20%! Plug in now.');
             notification.setTransient(false);
-            Main.messageTray.add(notification);
+            source.showNotification(notification);
         }
     }
 
-    _updateChargingTime(percent, state) {
+    _updateChargeLimit(limit) {
+        this._chargeLimitItem.label.text = `Charge Limit: ${limit}%`;
+    }
+
+    _updateChargeCompleteBy(percent, state, energyRate, chargeLimit) {
         if (state === 'charging') {
-            let estimatedTime = this._estimateChargingTime(percent);
-            this._chargingTimeItem.label.text = `Charging Time: ${estimatedTime}`;
-            this._chargingTimeLabel.text = estimatedTime;
+            let estimatedTime = this._estimateChargeCompleteBy(percent, energyRate, chargeLimit);
+            this._chargeCompleteByItem.label.text = `Charge Complete By: ${estimatedTime}`;
+            this._chargeLimitLabel.text = `Charge Complete By: ${estimatedTime}`;
         } else {
-            this._chargingTimeItem.label.text = 'Charging Time: --';
-            this._chargingTimeLabel.text = '';
+            this._chargeCompleteByItem.label.text = 'Charge Complete By: --';
+            this._chargeLimitLabel.text = '';
         }
     }
 
@@ -117,10 +152,13 @@ class BatteryMenuButton extends PanelMenu.Button {
         this._indicator.visible = state === 'charging';
     }
 
-    _estimateChargingTime(percent) {
-        let currentTime = new Date();
-        let estimatedCompletionTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000);
-        return estimatedCompletionTime.toLocaleTimeString();
+    _estimateChargeCompleteBy(currentPercent, energyRate, chargeLimit) {
+        // Calculate the time to reach the charge limit based on the current charging rate
+        let energyToChargeLimit = (chargeLimit - currentPercent) / 100 * 39.431; // Assuming energy-full is 39.431 Wh
+        let timeToLimitHours = energyToChargeLimit / energyRate;
+        let now = new Date();
+        let future = new Date(now.getTime() + timeToLimitHours * 60 * 60 * 1000);
+        return future.toLocaleTimeString();
     }
 
     destroy() {

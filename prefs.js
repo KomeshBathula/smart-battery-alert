@@ -10,7 +10,7 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
 
         const page = new Adw.PreferencesPage();
         const group = new Adw.PreferencesGroup();
-        //Update Time Row 
+
         const updateTimeRow = new Adw.SpinRow({
             title: 'Update Time',
             subtitle: 'Seconds between updates',
@@ -39,4 +39,3 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
         window.add(page);
     }
 }
-
