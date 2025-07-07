@@ -126,14 +126,12 @@ class BatteryMenuButton extends PanelMenu.Button {
 
             if (state === 'charging') {
                 if (!this._isCharging) {
-                    this._initialEnergyRate = energyRate;
-                    this._initialTime = new Date();
                     this._isCharging = true;
-                    this._estimatedTime = this._estimateChargeCompleteBy(percent, energyRate, chargeLimit, energyFull);
-                    if (!this._chargerConnectedNotified) {
-                        Main.notify('Charger Connected', `Your laptop will be charged at ${this._estimatedTime}. Please set an alarm if you want to shutdown the laptop.`);
-                        this._chargerConnectedNotified = true;
-                    }
+                }
+                this._estimatedTime = this._estimateChargeCompleteBy(percent, energyRate, chargeLimit, energyFull);
+                if (!this._chargerConnectedNotified) {
+                    Main.notify('Charger Connected', `Your laptop will be charged at ${this._estimatedTime}. Please set an alarm if you want to shutdown the laptop.`);
+                    this._chargerConnectedNotified = true;
                 }
 
                 if (percent >= chargeLimit && !this._chargeLimitReached) {
@@ -148,8 +146,6 @@ class BatteryMenuButton extends PanelMenu.Button {
                     }
                 }
             } else {
-                this._initialEnergyRate = null;
-                this._initialTime = null;
                 this._isCharging = false;
                 this._chargeLimitReached = false;
                 this._chargerConnectedNotified = false;
@@ -204,6 +200,9 @@ class BatteryMenuButton extends PanelMenu.Button {
     }
 
     _estimateChargeCompleteBy(currentPercent, energyRate, chargeLimit, energyFull) {
+        if (energyRate <= 0) {
+            return 'Invalid Date';
+        }
         let energyToChargeLimit = (chargeLimit - currentPercent) / 100 * energyFull;
         let timeToLimitHours = energyToChargeLimit / energyRate;
         let now = new Date();
