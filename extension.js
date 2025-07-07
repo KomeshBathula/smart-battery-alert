@@ -60,8 +60,9 @@ class BatteryMenuButton extends PanelMenu.Button {
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         let refreshButton = new St.Button({
-            style_class: 'message-list-clear-button button vitals-button-action',
-            child: new St.Icon({ icon_name: 'view-refresh-symbolic' })
+            style_class: 'message-list-clear-button button sba-button-action',
+            child: new St.Icon({ icon_name: 'view-refresh-symbolic'
+             })
         });
         refreshButton.connect('clicked', () => {
             this._queryBattery();

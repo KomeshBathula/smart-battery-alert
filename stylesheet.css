@@ -1,4 +1,4 @@
-.vitals-button-action {
+.sba-button-action {
     -st-icon-style: symbolic;
     border-radius: 32px;
     margin: 0px;
@@ -9,11 +9,9 @@
     border: 1px solid transparent;
 }
 
-.vitals-button-action:hover, .vitals-button-action:focus {
+.sba-button-action:hover, .sba-button-action:focus {
     border-color: #777;
 }
-
-.vitals-button-action > StIcon {
+.sba-button-action > StIcon {
     icon-size: 16px;
 }
-
