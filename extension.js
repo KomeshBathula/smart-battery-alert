@@ -35,6 +35,14 @@ class BatteryMenuButton extends PanelMenu.Button {
         });
         this.add_child(this._chargeLimitLabel);
 
+        this._chargeLimitReached = false;
+        this._initialEnergyRate = null;
+        this._initialTime = null;
+        this._isCharging = false;
+        this._estimatedTime = null;
+        this._lowBatteryNotified = false;
+        this._chargerConnectedNotified = false;
+
         this._initializeMenu();
         this.initializeTimer();
     }
@@ -97,7 +105,6 @@ class BatteryMenuButton extends PanelMenu.Button {
             let percentageMatch = info.match(/percentage:\s+(\d+)%/i);
             let stateMatch = info.match(/state:\s+(\w+)/i);
             let energyRateMatch = info.match(/energy-rate:\s+([\d.]+) W/i);
-            let chargeLimit = this._settings.get_int('charge-limit');
 
             if (!percentageMatch || !stateMatch || !energyRateMatch) {
                 log('Battery info incomplete');
@@ -107,27 +114,56 @@ class BatteryMenuButton extends PanelMenu.Button {
             let percent = parseInt(percentageMatch[1]);
             let state = stateMatch[1];
             let energyRate = parseFloat(energyRateMatch[1]);
+            let chargeLimit = this._settings.get_int('charge-limit');
 
-            this._updateBatteryLevel(percent);
+            if (state === 'charging') {
+                if (!this._isCharging) {
+                    this._initialEnergyRate = energyRate;
+                    this._initialTime = new Date();
+                    this._isCharging = true;
+                    this._estimatedTime = this._estimateChargeCompleteBy(percent, energyRate, chargeLimit);
+                    if (!this._chargerConnectedNotified) {
+                        Main.notify('Charger Connected', `Your laptop will be charged at ${this._estimatedTime}. Please set an alarm if you want to shutdown the laptop.`);
+                        this._chargerConnectedNotified = true;
+                    }
+                }
+            } else {
+                this._initialEnergyRate = null;
+                this._initialTime = null;
+                this._isCharging = false;
+                this._chargeLimitReached = false;
+                this._lowBatteryNotified = false;
+                this._chargerConnectedNotified = false;
+                this._estimatedTime = null;
+            }
+
+            this._updateBatteryLevel(percent, chargeLimit, state);
             this._updateChargeLimit(chargeLimit);
-            this._updateChargeCompleteBy(percent, state, energyRate, chargeLimit);
+            this._updateChargeCompleteBy();
             this._updateBatteryIconVisibility(state);
         } catch (e) {
             logError(e, 'Battery check failed');
         }
     }
 
-    _updateBatteryLevel(percent) {
+    _updateBatteryLevel(percent, chargeLimit, state) {
         this._batteryLevelItem.label.text = `Battery Level: ${percent}%`;
         this._batteryLevelLabel.text = `Battery Level: ${percent}%`;
 
-        if (percent <= 30) {
-            Main.notify('Battery Alert', `Battery is at ${percent}%. Connect your charger.`);
+        if (state === 'charging' && percent >= chargeLimit && !this._chargeLimitReached) {
+            this._chargeLimitReached = true;
+            Main.notify('Charge Limit Reached', `Battery has reached the charge limit of ${chargeLimit}%.`);
         }
-        if (percent === 20) {
+
+        if (percent <= 30 && !this._lowBatteryNotified) {
+            Main.notify('Battery Alert', `Battery is at ${percent}%. Connect your charger.`);
+            this._lowBatteryNotified = true;
+        }
+
+        if (percent <= 20) {
             const source = new MessageTray.Source('Battery Alert', 'battery-caution-symbolic');
             Main.messageTray.add(source);
-            let notification = new MessageTray.Notification(source, 'Critical Battery Alert', 'Battery at 20%! Plug in now.');
+            let notification = new MessageTray.Notification(source, 'Critical Battery Alert', 'Battery at 20%! Plug in now to use the laptop.');
             notification.setTransient(false);
             source.showNotification(notification);
         }
@@ -137,11 +173,10 @@ class BatteryMenuButton extends PanelMenu.Button {
         this._chargeLimitItem.label.text = `Charge Limit: ${limit}%`;
     }
 
-    _updateChargeCompleteBy(percent, state, energyRate, chargeLimit) {
-        if (state === 'charging') {
-            let estimatedTime = this._estimateChargeCompleteBy(percent, energyRate, chargeLimit);
-            this._chargeCompleteByItem.label.text = `Charge Complete By: ${estimatedTime}`;
-            this._chargeLimitLabel.text = `Charge Complete By: ${estimatedTime}`;
+    _updateChargeCompleteBy() {
+        if (this._isCharging && this._estimatedTime !== null) {
+            this._chargeCompleteByItem.label.text = `Charge Complete By: ${this._estimatedTime}`;
+            this._chargeLimitLabel.text = `Charge Complete By: ${this._estimatedTime}`;
         } else {
             this._chargeCompleteByItem.label.text = 'Charge Complete By: --';
             this._chargeLimitLabel.text = '';
@@ -153,12 +188,11 @@ class BatteryMenuButton extends PanelMenu.Button {
     }
 
     _estimateChargeCompleteBy(currentPercent, energyRate, chargeLimit) {
-        // Calculate the time to reach the charge limit based on the current charging rate
         let energyToChargeLimit = (chargeLimit - currentPercent) / 100 * 39.431; // Assuming energy-full is 39.431 Wh
         let timeToLimitHours = energyToChargeLimit / energyRate;
         let now = new Date();
         let future = new Date(now.getTime() + timeToLimitHours * 60 * 60 * 1000);
-        return future.toLocaleTimeString();
+        return future.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     destroy() {
