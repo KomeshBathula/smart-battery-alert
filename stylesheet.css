@@ -1,3 +1,102 @@
+/* ═══════════════════════════════════════════════════════
+   Smart Battery Alert — Stylesheet
+   Keep it lightweight: only custom classes are styled.
+   Everything else inherits GNOME Shell's theme.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Panel indicator ──────────────────────────────────── */
+.sba-panel-label {
+    margin-left: 4px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* ── Popup menu ───────────────────────────────────────── */
+.sba-menu-header .popup-menu-item {
+    font-weight: bold;
+    font-size: 14px;
+    color: #a0c4ff;
+}
+
+/* Quick-set buttons container */
+.sba-quickset-box {
+    spacing: 8px;
+    margin: 4px 8px;
+}
+
+.sba-quickset-header .popup-menu-item {
+    font-size: 12px;
+    color: #999;
+}
+
+/* Quick-set button base */
+.sba-quickset-btn {
+    border-radius: 16px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    border: 1px solid rgba(255,255,255,0.15);
+    background-color: rgba(255,255,255,0.08);
+    color: #ddd;
+    min-width: 50px;
+    text-align: center;
+    transition-duration: 150ms;
+}
+
+.sba-quickset-btn:hover {
+    background-color: rgba(255,255,255,0.16);
+    border-color: rgba(255,255,255,0.3);
+}
+
+.sba-quickset-btn:active {
+    background-color: rgba(255,255,255,0.22);
+}
+
+/* Active/selected quick-set button */
+.sba-quickset-active {
+    background-color: rgba(78, 154, 241, 0.35);
+    border-color: rgba(78, 154, 241, 0.7);
+    color: #fff;
+}
+
+.sba-quickset-active:hover {
+    background-color: rgba(78, 154, 241, 0.5);
+}
+
+/* Shutdown helper message */
+.sba-shutdown-msg .popup-menu-item {
+    font-size: 11px;
+    color: #f0c674;
+    font-style: italic;
+}
+
+/* ── Critical battery modal dialog ────────────────────── */
+.sba-critical-dialog .modal-dialog {
+    max-width: 400px;
+}
+
+.sba-critical-content {
+    spacing: 16px;
+    padding: 24px;
+}
+
+.sba-critical-icon {
+    color: #ff5555;
+}
+
+.sba-critical-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ff5555;
+}
+
+.sba-critical-body {
+    font-size: 14px;
+    color: #ccc;
+    text-align: center;
+}
+
+/* ── Legacy button style (refresh / etc.) ─────────────── */
 .sba-button-action {
     -st-icon-style: symbolic;
     border-radius: 32px;
@@ -7,11 +106,14 @@
     padding: 10px;
     font-size: 100%;
     border: 1px solid transparent;
+    transition-duration: 150ms;
 }
 
-.sba-button-action:hover, .sba-button-action:focus {
+.sba-button-action:hover,
+.sba-button-action:focus {
     border-color: #777;
 }
+
 .sba-button-action > StIcon {
     icon-size: 16px;
 }
