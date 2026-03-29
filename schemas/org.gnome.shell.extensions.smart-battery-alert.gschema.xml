@@ -1,15 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema id="org.gnome.shell.extensions.smart-battery-alert" path="/org/gnome/shell/extensions/smart-battery-alert/">
+
+    <!-- General -->
     <key name="update-time" type="i">
-      <default>5</default>
-      <summary>Seconds between updates</summary>
-      <description>Delay between sensor polling</description>
+      <default>30</default>
+      <summary>Fallback polling interval (seconds)</summary>
+      <description>Seconds between fallback battery polls. Primary updates come from D-Bus signals.</description>
+    </key>
+    <key name="show-panel-percentage" type="b">
+      <default>true</default>
+      <summary>Show battery percentage in panel</summary>
+      <description>Display the current battery percentage next to the icon in the top bar.</description>
+    </key>
+
+    <!-- Low Battery -->
+    <key name="enable-low-battery-alarm" type="b">
+      <default>true</default>
+      <summary>Enable low battery alerts</summary>
+      <description>Show notifications when battery drops below the low battery threshold.</description>
+    </key>
+    <key name="low-battery-threshold" type="i">
+      <default>30</default>
+      <summary>Low battery threshold (%)</summary>
+      <description>Battery percentage at which low battery alerts begin.</description>
+    </key>
+    <key name="critical-battery-threshold" type="i">
+      <default>20</default>
+      <summary>Critical battery threshold (%)</summary>
+      <description>Battery percentage at which the persistent critical alert appears.</description>
+    </key>
+    <key name="low-battery-alert-interval" type="i">
+      <default>2</default>
+      <summary>Low battery alert interval (%)</summary>
+      <description>Alert the user for every N% decrease in battery below the threshold.</description>
+    </key>
+
+    <!-- Charge Limit -->
+    <key name="enable-charge-limit-alarm" type="b">
+      <default>true</default>
+      <summary>Enable charge limit alarm</summary>
+      <description>Alert when battery reaches the configured charge limit while charging.</description>
     </key>
     <key name="charge-limit" type="i">
       <default>80</default>
-      <summary>Battery Cap Level</summary>
-      <description>Battery charge level at which to alert the user.</description>
+      <summary>Battery charge limit (%)</summary>
+      <description>Battery charge level at which to alert the user to unplug.</description>
     </key>
+
+    <!-- Charge Prediction -->
+    <key name="enable-charge-prediction" type="b">
+      <default>true</default>
+      <summary>Enable charge time prediction</summary>
+      <description>Show estimated time when the battery will be fully charged.</description>
+    </key>
+
   </schema>
 </schemalist>
