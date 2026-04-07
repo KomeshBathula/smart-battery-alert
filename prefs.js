@@ -184,6 +184,64 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
 
         page.add(predGroup);
 
+        /* ── Battery Health ───────────────────────────────── */
+        const healthGroup = new Adw.PreferencesGroup({
+            title: 'Battery Health & Analytics',
+            description: 'Monitor battery degradation and charge cycles',
+        });
+
+        const healthThreshold = new Adw.SpinRow({
+            title: 'Health Warning Threshold',
+            subtitle: 'Alert when battery capacity drops below this percentage',
+            adjustment: new Gtk.Adjustment({
+                lower: 50,
+                upper: 95,
+                step_increment: 5,
+                value: settings.get_int('health-warning-threshold'),
+            }),
+        });
+        settings.bind('health-warning-threshold', healthThreshold, 'value',
+            Gio.SettingsBindFlags.DEFAULT);
+        healthGroup.add(healthThreshold);
+
+        const cyclesRow = new Adw.ActionRow({
+            title: 'Charge Cycles',
+            subtitle: `Total cycles completed: ${settings.get_int('charge-cycle-count')}`,
+        });
+        healthGroup.add(cyclesRow);
+
+        page.add(healthGroup);
+
+        /* ── Sound Alerts ─────────────────────────────────── */
+        const soundGroup = new Adw.PreferencesGroup({
+            title: 'Sound Alerts',
+            description: 'Audio notifications for battery events',
+        });
+
+        const enableSound = new Adw.SwitchRow({
+            title: 'Enable Sound Alerts',
+            subtitle: 'Play sounds for battery notifications',
+        });
+        settings.bind('enable-sound-alerts', enableSound, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
+        soundGroup.add(enableSound);
+
+        const soundVolume = new Adw.SpinRow({
+            title: 'Alert Volume',
+            subtitle: 'Volume level for notification sounds (0-100)',
+            adjustment: new Gtk.Adjustment({
+                lower: 0,
+                upper: 100,
+                step_increment: 10,
+                value: settings.get_int('sound-volume'),
+            }),
+        });
+        settings.bind('sound-volume', soundVolume, 'value',
+            Gio.SettingsBindFlags.DEFAULT);
+        soundGroup.add(soundVolume);
+
+        page.add(soundGroup);
+
         /* ── About ────────────────────────────────────────── */
         const aboutGroup = new Adw.PreferencesGroup({
             title: 'About',
