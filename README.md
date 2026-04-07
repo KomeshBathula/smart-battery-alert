@@ -27,21 +27,21 @@ A **lightweight**, **non-invasive** GNOME Shell extension that gives you full co
 
 ### 📊 Battery Health Tracking
 - **Monitor battery capacity degradation** over time
-- Track **charge cycle count** automatically
+- Track **charge cycle count** automatically (accumulates 100% discharged = 1 cycle)
 - Get **warnings when battery health drops** below threshold
 - View battery health percentage in the panel menu
-- **Multi-battery support** for laptops with dual batteries or power banks
+- Logs battery capacity data for long-term analysis
 
 ### 📈 Usage Statistics
 - Track **time spent charging vs. discharging**
 - Log battery usage patterns automatically
 - Historical data stored in JSON format
 
-### 🔊 Custom Sound Alerts
-- **User-selectable sounds** for different events
-- Distinct sounds for low battery, charge limit, and full charge
+### 🔊 Sound Alerts
+- **System sounds** for battery events
+- Sounds for low battery, charge limit, and full charge
 - **Adjustable volume control** (0-100%)
-- Enable/disable sounds individually
+- Enable/disable sounds globally
 
 ### 💤 Shutdown Workflow
 - Want to shut down while charging? The popup displays:
@@ -125,7 +125,7 @@ gnome-extensions prefs smart-battery-alert@komesh.dev
 Extension (enable/disable)
   └─ BatteryMonitor (event-driven core)
        ├─ UPower D-Bus signals (notify::percentage, notify::state)
-       ├─ Multi-battery support (primary + secondary devices)
+       ├─ Primary battery monitoring (first detected battery)
        ├─ Fallback timer (30s safety net)
        ├─ LowBattery controller → notifications every 2%
        ├─ CriticalBattery controller → modal dialog ≤20%
@@ -133,7 +133,7 @@ Extension (enable/disable)
        ├─ ChargePrediction → EMA-smoothed ETA
        ├─ BatteryHealth → degradation tracking + cycle count
        ├─ UsageStats → charging/discharging time tracking
-       └─ SoundAlerts → customizable audio notifications
+       └─ SoundAlerts → system audio notifications
   └─ SmartBatteryIndicator (panel UI)
        ├─ Battery icon + percentage label
        ├─ Popup menu (status, ETA, charge limit, health, cycles)

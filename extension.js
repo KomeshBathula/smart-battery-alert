@@ -12,7 +12,6 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import UPowerGlib from 'gi://UPowerGlib';
-import Gio from 'gi://Gio';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -56,10 +55,22 @@ function _notify(title, body) {
  */
 function _playSound(soundName, volume) {
     try {
+        // Normalize volume from 0-100 to 0.0-1.0
+        let normalizedVolume = (volume || 50) / 100.0;
+        normalizedVolume = Math.max(0.0, Math.min(1.0, normalizedVolume));
+        
         // Try new API (GNOME 45+)
         if (global.context && global.context.get_sound_context) {
             let context = global.context.get_sound_context();
-            context.play_simple(soundName, null);
+            try {
+                // Try with volume property
+                context.play_simple(soundName, {
+                    'canberra.volume': String(normalizedVolume),
+                });
+            } catch (innerError) {
+                // Fallback without volume
+                context.play_simple(soundName, null);
+            }
         }
         // Fallback to older API (GNOME 43-44)
         else if (global.create_sound_context) {
@@ -69,6 +80,7 @@ function _playSound(soundName, volume) {
                 'event.id': soundName,
                 'media.role': 'notification',
                 'canberra.cache-control': 'permanent',
+                'canberra.volume': String(normalizedVolume),
             });
         }
         // Last resort: try direct play
@@ -404,6 +416,7 @@ class BatteryMonitor {
 
         /* Battery health tracking */
         this._lastCyclePercentage = 100;
+        this._dischargedPercentageAccumulator = 0;
         this._sessionStartTime = GLib.get_real_time() / 1000000;
         this._chargingStartTime = null;
         this._dischargingStartTime = null;
@@ -504,6 +517,7 @@ class BatteryMonitor {
         this._trackBatteryHealth(percent, state, energyFull);
 
         let isCharging = (state === UPOWER_STATE_CHARGING);
+        let isFull = (state === UPOWER_STATE_FULL);
 
         /* ── State transition: just plugged in ─────────────── */
         if (isCharging && prevState !== UPOWER_STATE_CHARGING && prevState !== -1) {
@@ -516,6 +530,11 @@ class BatteryMonitor {
             this._dischargingStartTime = GLib.get_real_time() / 1000000;
             this._trackUsageStats(state, prevState);
             this._onChargerDisconnected();
+        }
+
+        /* ── State transition: just reached full charge ────── */
+        if (isFull && prevState !== UPOWER_STATE_FULL && prevState !== -1) {
+            this._onFullyCharged();
         }
 
         /* ── Charging logic ────────────────────────────────── */
@@ -551,13 +570,23 @@ class BatteryMonitor {
             lastCapacity = energyFull;
         }
 
-        // Track charge cycles
-        if (state === UPOWER_STATE_DISCHARGING && percent < this._lastCyclePercentage - 100) {
-            let cycles = this._settings.get_int('charge-cycle-count');
-            this._settings.set_int('charge-cycle-count', cycles + 1);
+        // Track charge cycles by accumulating discharged percentage
+        if (state === UPOWER_STATE_DISCHARGING) {
+            let drop = this._lastCyclePercentage - percent;
+            if (drop > 0) {
+                this._dischargedPercentageAccumulator += drop;
+                // One full cycle = 100% discharged
+                while (this._dischargedPercentageAccumulator >= 100) {
+                    let cycles = this._settings.get_int('charge-cycle-count');
+                    this._settings.set_int('charge-cycle-count', cycles + 1);
+                    this._dischargedPercentageAccumulator -= 100;
+                }
+            }
             this._lastCyclePercentage = percent;
         } else if (state === UPOWER_STATE_FULL) {
             this._lastCyclePercentage = 100;
+        } else if (state === UPOWER_STATE_CHARGING) {
+            this._lastCyclePercentage = percent;
         }
 
         // Warn about degradation
@@ -580,24 +609,34 @@ class BatteryMonitor {
         try {
             let stats = JSON.parse(this._settings.get_string('usage-stats'));
             if (!stats.sessions) stats.sessions = [];
+            if (!stats.totalChargingTime) stats.totalChargingTime = 0;
+            if (!stats.totalDischargingTime) stats.totalDischargingTime = 0;
 
             let now = GLib.get_real_time() / 1000000;
             
+            // Record the duration of the previous state
             if (prevState === UPOWER_STATE_CHARGING && this._chargingStartTime) {
                 let chargeDuration = now - this._chargingStartTime;
-                if (!stats.totalChargingTime) stats.totalChargingTime = 0;
                 stats.totalChargingTime += chargeDuration;
+                this._chargingStartTime = null;
             }
 
-            if (state === UPOWER_STATE_DISCHARGING && this._dischargingStartTime) {
-                let dischargeDuration = now - this._sessionStartTime;
-                if (!stats.totalDischargingTime) stats.totalDischargingTime = 0;
+            if (prevState === UPOWER_STATE_DISCHARGING && this._dischargingStartTime) {
+                let dischargeDuration = now - this._dischargingStartTime;
                 stats.totalDischargingTime += dischargeDuration;
+                this._dischargingStartTime = null;
+            }
+
+            // Set start time for the new state
+            if (state === UPOWER_STATE_CHARGING) {
+                this._chargingStartTime = now;
+            } else if (state === UPOWER_STATE_DISCHARGING) {
+                this._dischargingStartTime = now;
             }
 
             this._settings.set_string('usage-stats', JSON.stringify(stats));
         } catch (e) {
-            console.warn('Failed to track usage stats:', e);
+            console.warn('[SmartBatteryAlert] Failed to track usage stats:', e);
         }
     }
 
@@ -648,6 +687,15 @@ class BatteryMonitor {
         if (this._chargerNotifyTimerId) {
             GLib.Source.remove(this._chargerNotifyTimerId);
             this._chargerNotifyTimerId = null;
+        }
+    }
+
+    /* ── Battery fully charged ─────────────────────────────── */
+    _onFullyCharged() {
+        _notify('✅ Battery Fully Charged', 'Your battery is at 100%. You can unplug the charger.');
+        if (this._settings.get_boolean('enable-sound-alerts')) {
+            let sound = this._settings.get_string('full-charge-sound');
+            _playSound(sound, this._settings.get_int('sound-volume'));
         }
     }
 

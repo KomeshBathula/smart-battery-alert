@@ -210,6 +210,11 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
         });
         healthGroup.add(cyclesRow);
 
+        // Update cycle count live when it changes
+        settings.connect('changed::charge-cycle-count', () => {
+            cyclesRow.subtitle = `Total cycles completed: ${settings.get_int('charge-cycle-count')}`;
+        });
+
         page.add(healthGroup);
 
         /* ── Sound Alerts ─────────────────────────────────── */
