@@ -55,5 +55,61 @@
       <description>Show estimated time when the battery will be fully charged.</description>
     </key>
 
+    <!-- Battery Health Tracking -->
+    <key name="battery-health-log" type="s">
+      <default>'{}'</default>
+      <summary>Battery health history</summary>
+      <description>JSON log of battery health degradation over time.</description>
+    </key>
+    <key name="charge-cycle-count" type="i">
+      <default>0</default>
+      <summary>Charge cycle count</summary>
+      <description>Number of full charge cycles completed.</description>
+    </key>
+    <key name="health-warning-threshold" type="i">
+      <default>80</default>
+      <summary>Battery health warning threshold (%)</summary>
+      <description>Show warning when battery health drops below this percentage.</description>
+    </key>
+    <key name="last-full-capacity" type="d">
+      <default>0.0</default>
+      <summary>Last recorded full capacity (Wh)</summary>
+      <description>Most recent full capacity measurement for tracking degradation.</description>
+    </key>
+
+    <!-- Usage Statistics -->
+    <key name="usage-stats" type="s">
+      <default>'{}'</default>
+      <summary>Usage statistics</summary>
+      <description>JSON log of battery usage patterns and statistics.</description>
+    </key>
+
+    <!-- Sound Alerts -->
+    <key name="enable-sound-alerts" type="b">
+      <default>true</default>
+      <summary>Enable sound alerts</summary>
+      <description>Play sounds for battery notifications.</description>
+    </key>
+    <key name="sound-volume" type="i">
+      <default>50</default>
+      <summary>Alert sound volume (0-100)</summary>
+      <description>Volume level for battery alert sounds.</description>
+    </key>
+    <key name="low-battery-sound" type="s">
+      <default>'battery-low'</default>
+      <summary>Low battery sound</summary>
+      <description>Sound theme name for low battery alerts.</description>
+    </key>
+    <key name="charge-limit-sound" type="s">
+      <default>'complete'</default>
+      <summary>Charge limit sound</summary>
+      <description>Sound theme name for charge limit alerts.</description>
+    </key>
+    <key name="full-charge-sound" type="s">
+      <default>'complete'</default>
+      <summary>Full charge sound</summary>
+      <description>Sound theme name for full charge alerts.</description>
+    </key>
+
   </schema>
 </schemalist>
