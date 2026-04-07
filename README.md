@@ -12,6 +12,7 @@ A **lightweight**, **non-invasive** GNOME Shell extension that gives you full co
 - Starts alerting when battery drops below **30%**
 - Sends a notification for every **2% decrease**
 - At **20%**, a **persistent modal dialog** blocks the screen — it only disappears when you connect the charger
+- **Custom sound alerts** for different battery events
 
 ### ⚡ Charge Time Prediction
 - When you plug in the charger, shows the **exact clock time** your battery will be charged
@@ -23,6 +24,24 @@ A **lightweight**, **non-invasive** GNOME Shell extension that gives you full co
 - Get alerted the moment your battery hits the limit
 - **Continuous alerts every 1%** if you keep it charging past the limit
 - **Non-invasive**: Does NOT modify kernel, BIOS, or charging hardware
+
+### 📊 Battery Health Tracking
+- **Monitor battery capacity degradation** over time
+- Track **charge cycle count** automatically (accumulates 100% discharged = 1 cycle)
+- Get **warnings when battery health drops** below threshold
+- View battery health percentage in the panel menu
+- Logs battery capacity data for long-term analysis
+
+### 📈 Usage Statistics
+- Track **time spent charging vs. discharging**
+- Log battery usage patterns automatically
+- Historical data stored in JSON format
+
+### 🔊 Sound Alerts
+- **System sounds** for battery events
+- Sounds for low battery, charge limit, and full charge
+- **Adjustable volume control** (0-100%)
+- Enable/disable sounds globally
 
 ### 💤 Shutdown Workflow
 - Want to shut down while charging? The popup displays:
@@ -80,6 +99,9 @@ gnome-extensions prefs smart-battery-alert@komesh.dev
 | Alert Every N% | 2% | Notification interval on discharge |
 | Charge Limit | 80% | Alert when charging reaches this |
 | Charge Prediction | ✅ | Show estimated completion time |
+| Health Warning Threshold | 80% | Alert when battery capacity drops below |
+| Enable Sound Alerts | ✅ | Play sounds for notifications |
+| Sound Volume | 50% | Volume level for alerts (0-100) |
 
 ---
 
@@ -87,7 +109,7 @@ gnome-extensions prefs smart-battery-alert@komesh.dev
 
 | | Supported |
 |---|---|
-| **GNOME Shell** | 43, 44, 45, 46, 47, 48 |
+| **GNOME Shell** | 43, 44, 45, 46, 47, 48, 49 |
 | **Fedora** | ✅ |
 | **Ubuntu** | ✅ |
 | **Arch Linux** | ✅ |
@@ -103,14 +125,18 @@ gnome-extensions prefs smart-battery-alert@komesh.dev
 Extension (enable/disable)
   └─ BatteryMonitor (event-driven core)
        ├─ UPower D-Bus signals (notify::percentage, notify::state)
+       ├─ Primary battery monitoring (first detected battery)
        ├─ Fallback timer (30s safety net)
        ├─ LowBattery controller → notifications every 2%
        ├─ CriticalBattery controller → modal dialog ≤20%
        ├─ ChargeLimit controller → alarm + over-charge alerts
-       └─ ChargePrediction → EMA-smoothed ETA
+       ├─ ChargePrediction → EMA-smoothed ETA
+       ├─ BatteryHealth → degradation tracking + cycle count
+       ├─ UsageStats → charging/discharging time tracking
+       └─ SoundAlerts → system audio notifications
   └─ SmartBatteryIndicator (panel UI)
        ├─ Battery icon + percentage label
-       ├─ Popup menu (status, ETA, charge limit)
+       ├─ Popup menu (status, ETA, charge limit, health, cycles)
        ├─ Quick-set buttons (70% / 80% / 90%)
        └─ Shutdown workflow helper
 ```
