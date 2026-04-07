@@ -109,7 +109,7 @@ gnome-extensions prefs smart-battery-alert@komesh.dev
 
 | | Supported |
 |---|---|
-| **GNOME Shell** | 43, 44, 45, 46, 47, 48 |
+| **GNOME Shell** | 43, 44, 45, 46, 47, 48, 49 |
 | **Fedora** | ✅ |
 | **Ubuntu** | ✅ |
 | **Arch Linux** | ✅ |

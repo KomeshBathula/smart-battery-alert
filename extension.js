@@ -1,7 +1,7 @@
 /*  Smart Battery Alert — GNOME Shell Extension
  *  Lightweight, event-driven battery monitor.
  *  Works on all Linux distros with UPower (Fedora, Ubuntu, Arch, etc.)
- *  Supports GNOME Shell 43 – 48.
+ *  Supports GNOME Shell 43 – 49.
  *
  *  Copyright (c) 2026 Komesh Bathula — komesh.dev
  *  SPDX-License-Identifier: GPL-3.0-or-later
@@ -52,19 +52,32 @@ function _notify(title, body) {
 
 /**
  * Play a system sound for notifications.
+ * Compatible with GNOME 43-49.
  */
 function _playSound(soundName, volume) {
     try {
-        let context = global.create_sound_context();
-        let theme = context.get_theme();
-        let cancellable = null;
-        theme.play_simple(cancellable, {
-            'event.id': soundName,
-            'media.role': 'notification',
-            'canberra.cache-control': 'permanent',
-        });
+        // Try new API (GNOME 45+)
+        if (global.context && global.context.get_sound_context) {
+            let context = global.context.get_sound_context();
+            context.play_simple(soundName, null);
+        }
+        // Fallback to older API (GNOME 43-44)
+        else if (global.create_sound_context) {
+            let context = global.create_sound_context();
+            let theme = context.get_theme();
+            theme.play_simple(null, {
+                'event.id': soundName,
+                'media.role': 'notification',
+                'canberra.cache-control': 'permanent',
+            });
+        }
+        // Last resort: try direct play
+        else if (global.display && global.display.get_sound_player) {
+            let player = global.display.get_sound_player();
+            player.play_from_theme(soundName, soundName, null);
+        }
     } catch (e) {
-        console.warn('Sound playback failed:', e);
+        console.warn('[SmartBatteryAlert] Sound playback failed:', e);
     }
 }
 

@@ -2,7 +2,7 @@
   "uuid": "smart-battery-alert@komesh.dev",
   "name": "Smart Battery Alert",
   "description": "Lightweight, non-invasive battery manager for Linux. Smart low-battery alarms (every 2% below 30%), persistent critical alerts at 20%, charge-limit notifications (70/80/90%), and clock-time charge prediction. Protects Li-ion batteries without touching BIOS or kernel. Works on all Linux distros.",
-  "shell-version": ["43", "44", "45", "46", "47", "48"],
+  "shell-version": ["43", "44", "45", "46", "47", "48", "49"],
   "version": 2,
   "settings-schema": "org.gnome.shell.extensions.smart-battery-alert",
   "url": "https://github.com/KomeshBathula/smart-battery-alert",
