@@ -137,7 +137,13 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
         limitGroup.add(chargeLimit);
 
         /* Quick-set action rows */
+        const quickRows = [];
         for (let pct of [70, 80, 90]) {
+            const image = new Gtk.Image({
+                icon_name: settings.get_int('charge-limit') === pct
+                    ? 'emblem-ok-symbolic'
+                    : 'go-next-symbolic',
+            });
             const row = new Adw.ActionRow({
                 title: `Quick Set: ${pct}%`,
                 subtitle: pct === 80
@@ -147,18 +153,25 @@ export default class SmartBatteryAlertPreferences extends ExtensionPreferences {
                         : 'Balanced — more capacity per charge',
                 activatable: true,
             });
-            row.add_suffix(new Gtk.Image({
-                icon_name: settings.get_int('charge-limit') === pct
-                    ? 'emblem-ok-symbolic'
-                    : 'go-next-symbolic',
-            }));
+            row.add_suffix(image);
             row.connect('activated', () => {
                 settings.set_int('charge-limit', pct);
-                chargeLimit.adjustment.value = pct;
-                /* Note: icon won't live-update here but it's fine for a prefs window */
+                chargeLimit.adjustment.set_value(pct);
             });
+            quickRows.push({ pct, image });
             limitGroup.add(row);
         }
+
+        // Keep quick-set checkmarks in sync with settings changes
+        settings.connect('changed::charge-limit', () => {
+            const currentLimit = settings.get_int('charge-limit');
+            for (let r of quickRows) {
+                r.image.icon_name = (r.pct === currentLimit)
+                    ? 'emblem-ok-symbolic'
+                    : 'go-next-symbolic';
+            }
+        });
+
 
         page.add(limitGroup);
 
