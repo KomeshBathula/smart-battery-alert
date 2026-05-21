@@ -432,6 +432,13 @@ class BatteryMonitor {
         this._chargerNotifyTimerId = null;
         this._retryTimerId = null;
 
+        /* Listen to settings changes to update UI instantly */
+        this._settingsChangedId = this._settings.connect('changed', () => {
+            if (!this._destroyed) {
+                this._onDeviceChanged();
+            }
+        });
+
         this._findBatteries();
     }
 
@@ -811,6 +818,11 @@ class BatteryMonitor {
     /* ── Cleanup ───────────────────────────────────────────── */
     destroy() {
         this._destroyed = true;
+
+        if (this._settingsChangedId) {
+            this._settings.disconnect(this._settingsChangedId);
+            this._settingsChangedId = null;
+        }
 
         if (this._fallbackTimerId) {
             GLib.Source.remove(this._fallbackTimerId);

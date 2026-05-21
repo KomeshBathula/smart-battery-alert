@@ -102,17 +102,17 @@
       <description>Volume level for battery alert sounds.</description>
     </key>
     <key name="low-battery-sound" type="s">
-      <default>'battery-low'</default>
+      <default>'dialog-warning'</default>
       <summary>Low battery sound</summary>
       <description>Sound theme name for low battery alerts.</description>
     </key>
     <key name="charge-limit-sound" type="s">
-      <default>'complete'</default>
+      <default>'dialog-information'</default>
       <summary>Charge limit sound</summary>
       <description>Sound theme name for charge limit alerts.</description>
     </key>
     <key name="full-charge-sound" type="s">
-      <default>'complete'</default>
+      <default>'dialog-information'</default>
       <summary>Full charge sound</summary>
       <description>Sound theme name for full charge alerts.</description>
     </key>
